@@ -58,29 +58,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if defined(USE_PTHREAD_JIT_WP) && defined(MAC_OS_VERSION_11_0) \
 	&& MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0
 static int MacOSchecked, MacOSver;
-/* This function is used implicitly by clang's __builtin_available() checker.
- * When cross-compiling, the library containing this function doesn't exist,
- * and linking will fail because the symbol is unresolved. The function here
- * is a quick and dirty hack to get close enough to identify MacOSX 11.0.
- * Modern clang generates ___isPlatformVersionAtLeast (3 underscores, "Platform")
- * instead of the older __isOSVersionAtLeast naming convention.
+/*
+ * clang's __builtin_available() generates a call to check the OS
+ * version at runtime. When cross-compiling, the compiler runtime
+ * library providing this symbol doesn't exist, so we provide our
+ * own stub.
+ *   __isPlatformVersionAtLeast   — clang 12–14 (Ubuntu 22.04)
+ *   ___isPlatformVersionAtLeast  — clang 15+
  */
-int32_t ___isPlatformVersionAtLeast(uint32_t platform, uint32_t major, uint32_t minor) {
+int32_t __isPlatformVersionAtLeast(uint32_t platform, uint32_t major, uint32_t minor) {
 	(void)platform;
 	if (!MacOSchecked) {
 	    struct utsname ut;
 		int mmaj, mmin;
 		uname(&ut);
 		sscanf(ut.release, "%d.%d", &mmaj, &mmin);
-		// The utsname release version is 9 greater than the canonical OS version
 		mmaj -= 9;
 		MacOSver = (mmaj << 8) | mmin;
 		MacOSchecked = 1;
 	}
 	return MacOSver >= ((major << 8) | minor);
 }
-#endif
 
+int32_t ___isPlatformVersionAtLeast(uint32_t platform, uint32_t major, uint32_t minor) {
+	return __isPlatformVersionAtLeast(platform, major, minor);
+}
+#endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define Fail(func)	do  {*errfunc = func; return GetLastError();} while(0)
