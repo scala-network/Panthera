@@ -65,7 +65,7 @@ static int MacOSchecked, MacOSver;
  * Modern clang generates ___isPlatformVersionAtLeast (3 underscores, "Platform")
  * instead of the older __isOSVersionAtLeast naming convention.
  */
-static int32_t ___isPlatformVersionAtLeast(uint32_t platform, uint32_t major, uint32_t minor) {
+int32_t ___isPlatformVersionAtLeast(uint32_t platform, uint32_t major, uint32_t minor) {
 	(void)platform;
 	if (!MacOSchecked) {
 	    struct utsname ut;
